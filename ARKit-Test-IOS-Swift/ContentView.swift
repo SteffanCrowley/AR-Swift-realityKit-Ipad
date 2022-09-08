@@ -8,11 +8,13 @@
 import SwiftUI
 import RealityKit
 import ARKit
+import Combine
 
 struct ContentView : View {
     @State private var isPlacementEnabled = false
     @State private var selectedModel: String?
     @State private var modelConfirmedForPlacement: String?
+    
     
     private var Models: [String] = {
         let filemanager = FileManager.default
@@ -35,8 +37,10 @@ struct ContentView : View {
     
     var body: some View {
         ZStack (alignment: .bottom) {
+            //All the AR magic below
             ARViewContainer(modelConfirmedForPlacement: $modelConfirmedForPlacement)
             
+            //below is for placement menu bar
             if isPlacementEnabled {
                 PlacementButtonsView(isPlacementEnabled: $isPlacementEnabled, selectedModel: $selectedModel, modelConfirmedForPlacement: $modelConfirmedForPlacement)
             } else {
@@ -49,6 +53,7 @@ struct ContentView : View {
 
 struct ARViewContainer: UIViewRepresentable {
     @Binding var modelConfirmedForPlacement: String?
+    
     
     func makeUIView(context: Context) -> ARView {
         
@@ -76,6 +81,7 @@ struct ARViewContainer: UIViewRepresentable {
             let modelEntity = try! ModelEntity.loadModel(named: filename)
             
             let anchorEntity = AnchorEntity(plane:.any)
+            
             anchorEntity.addChild(modelEntity)
             
             uiView.scene.addAnchor(anchorEntity)
@@ -87,11 +93,21 @@ struct ARViewContainer: UIViewRepresentable {
             // installing gestures for the parentEntity
             uiView.installGestures(for: modelEntity)
             
+//            var collisionSubscription = uiView.scene.publisher(for: CollisionEvents.Began.self,
+//                                                                   on:nil).sink(receiveValue: onCollisionBegan)
+            
             DispatchQueue.main.async {
                 modelConfirmedForPlacement = nil
             }
         }
     }
+    
+    private func onCollisionBegan(_ event:
+                                  CollisionEvents.Began) {
+        print("collision started")
+        // Take appropriate action...
+    }
+    
 }
 
 struct ModelPickerView: View {
